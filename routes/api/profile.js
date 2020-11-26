@@ -165,8 +165,8 @@ router.put('/add/experience', [auth, [
     try {
         const userProfile = await Profile.findOne({user : userId});
         //build experience array
-        const {company, title, from, to, current, description} = req.body
-        const newExperience = {company, title, from, to, current, description}
+        const {company, title, from, location, to, current, description} = req.body
+        const newExperience = {company, title, location, from, to, current, description}
         userProfile.experience.unshift(newExperience);
         await userProfile.save()  
         res.status(200).json(userProfile)
@@ -209,6 +209,70 @@ router.delete('/delete/experience/:id', [auth], async (req, res) =>{
     }
 
 } )
+
+
+
+
+    /**
+     * @route PUT api/profile/add/education
+     * @description Adds an education document to user profile
+     * @returns object
+     */
+    router.put('/add/education', [auth, [
+        check('school', 'School name is required').not().isEmpty(),
+        check('from', 'Start date is required').not().isEmpty(),
+        check('from', 'Start date is invalid').isDate(),
+        check('to','End date format is invalid').isDate()
+        
+    ]], async (req, res) =>{
+        const userId = req.user;
+        const errors = validationResult(req);
+        if(!errors.isEmpty())return res.status(401).json({errors: errors.array()})
+        //get the profile of the logged in user 
+        try {
+            const userProfile = await Profile.findOne({user : userId});
+            //build experience array
+            const {school, fieldOfStudy, from, qualification, to, current, description } = req.body
+            const education = {school, fieldOfStudy, from, qualification, to, current, description }
+            userProfile.education.unshift(education);
+            await userProfile.save()  
+            res.status(200).json(userProfile)
+        } catch (err) {
+            console.log(err.message)
+            res.status(500).send("Server error")
+        }
+    
+    } )
+    
+    /**
+     * @route DELETE api/profile/delete/education/:id
+     * @description Delete an education record from a profile
+     * @returns object
+     */
+    router.delete('/delete/education/:id', [auth], async (req, res) =>{
+        const userId = req.user;
+        const educationId = req.params.id
+        //get the profile of the logged in user 
+        try {
+            const userProfile = await Profile.findOne({user : userId});
+            const getIndexToDelete = userProfile.education.map(edu => edu._id).indexOf(educationId)
+                
+            //indexOf returns -1 if not found
+            //we need to accomodate for that knowing that the array will be deleting a wrong education record if we splice with 
+            //-1
+            if(getIndexToDelete == -1) return res.status(400).json({msg: "Education record not found"})
+    
+            userProfile.education.splice(getIndexToDelete, 1)
+            
+            await userProfile.save()  
+            res.status(200).json(userProfile)
+        } catch (err) {
+            console.log(err.message)
+            if(err.kind == 'ObjectId') return res.status(401).send("Profile does not exist")
+            res.status(500).send("Server error")
+        }
+    
+    } )
 
 
 module.exports = router;
