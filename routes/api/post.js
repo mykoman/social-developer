@@ -64,15 +64,15 @@ try {
     const {avatar, name} = user; 
     const {text} = req.body
     
-    const post = await Post.findById(postId);
-    if(!post) res.status(400).json({msg: "The comment you are about to add has no post reference"})
+    // const post = await Post.findById(postId);
+    // if(!post) res.status(400).json({msg: "The comment you are about to add has no post reference"})
     const commentData = {
         text,
         avatar,
         name,
         user: userId
     }
-    post.comment.unshift(commentData);
+    post.comments.unshift(commentData);
     await post.save();
     res.status(200).json(post);
 
@@ -133,6 +133,35 @@ try {
     try {
         await Post.findOneAndRemove({id:postId})
         res.status(200).json({msg: "Post deleted successfully"})
+    } catch (err) {
+       console.log(err.message)
+       if(err.kind == "ObjectId")return res.status(400).json({msg: "Post id not found"})
+       
+       return res.status(400).send("Server error")
+    }
+    
+
+ })
+
+
+ /**
+ * @route POST api/post/comment/post/:postId
+ * @description Delete a post 
+ * @returns object
+ * @access private
+ */
+
+router.delete('/comment/delete/:postId/:commentId', auth, async (req, res) =>{
+    const user = req.user
+    const postId = req.params.postId;
+    const commentId = req.params.commentId;
+    try {
+        const post = await Post.findOne({id:postId})
+        //find comment in the post
+        const commentIndex = post.comments.map(item => item._id).indexOf(commentId)
+        if(commentIndex == -1) return res.status(400).json({msg: "The associated post cannot be found"})
+        post.comments.splice(commentIndex, 1);
+        res.status(200).json({msg: "Comment deleted successfully"})
     } catch (err) {
        console.log(err.message)
        if(err.kind == "ObjectId")return res.status(400).json({msg: "Post id not found"})

@@ -18,10 +18,10 @@ const PostSchema = new MySchema({
 
     text: {
         type: String,
-        required
+        required: true
     },
 
-    comment: [{
+    comments: [{
         user:{
             type: mongoose.Schema.Types.ObjectId,
             ref: "user"
@@ -47,7 +47,7 @@ const PostSchema = new MySchema({
         
     }],
 
-    like : [{
+    likes : [{
         user: {
             type: MySchema.Types.ObjectId,
             ref: 'user'
