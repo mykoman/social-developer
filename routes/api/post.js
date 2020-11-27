@@ -85,12 +85,12 @@ try {
 
 
 /**
- * @route POST api/post/like/post/:postId
- * @description Create a post as a user
+ * @route PUT api/post/like/post/:postId
+ * @description Like a post 
  * @returns object
  * @access private
  */
-router.post('/like/post/:postId', [auth], async (req, res) => {
+router.put('/like/post/:postId', [auth], async (req, res) => {
     
 try {
     const user = req.user
@@ -118,5 +118,29 @@ try {
 }
     
 })
+
+
+/**
+ * @route POST api/post/delete/post/:postId
+ * @description Delete a post 
+ * @returns object
+ * @access private
+ */
+
+ router.delete('/delete/:postId', auth, async (req, res) =>{
+    const user = req.user
+    const postId = req.params.postId;
+    try {
+        await Post.findOneAndRemove({id:postId})
+        res.status(200).json({msg: "Post deleted successfully"})
+    } catch (err) {
+       console.log(err.message)
+       if(err.kind == "ObjectId")return res.status(400).json({msg: "Post id not found"})
+       
+       return res.status(400).send("Server error")
+    }
+    
+
+ })
 
 module.exports = router;
