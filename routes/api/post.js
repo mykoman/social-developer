@@ -83,4 +83,40 @@ try {
     
 })
 
+
+/**
+ * @route POST api/post/like/post/:postId
+ * @description Create a post as a user
+ * @returns object
+ * @access private
+ */
+router.post('/like/post/:postId', [auth], async (req, res) => {
+    
+try {
+    const user = req.user
+    const postId = req.params.postId;
+    const post = await Post.findById(postId)
+    if(!post) return res.status(400).json({msg: "Cannot find the post reference"})
+    //find the particular 
+    const userLikeIndex = post.likes.map(like =>like.user).indexOf(user);
+    if(userLikeIndex == -1){
+        //post hasn't been liked before
+        post.likes.unshift({user})
+    }
+    else{
+        //like already exists 
+        //let's remove that like
+        post.likes.splice(userLikeIndex, 1)
+    }
+    
+    await post.save();
+    res.status(200).json(post)
+
+} catch (err) {
+    console.log(err.message)
+        res.status(500).send("Server error")
+}
+    
+})
+
 module.exports = router;
