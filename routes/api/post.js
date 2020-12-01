@@ -41,12 +41,12 @@ try {
 
 
 /**
- * @route POST api/post/new/comment/:postId
+ * @route POST api/post/comment/new/:postId
  * @description Add a comment to a post
  * @returns object
  * @access private
  */
-router.post('/new/comment/:postId', [auth, [
+router.post('/comment/new/:postId', [auth, [
     check('text', 'The comment must contain some text').not().isEmpty()
 ]], async (req, res) => {
     const errors = validationResult(req)
@@ -131,7 +131,11 @@ try {
     const user = req.user
     const postId = req.params.postId;
     try {
-        await Post.findOneAndRemove({id:postId})
+       const post = await Post.findById(postId)
+       console.log(post);
+       //check if the user is the same as logged in user
+       if(user != post.user)  return res.status(401).json({msg: "Unautorized user"})
+        await post.remove();
         res.status(200).json({msg: "Post deleted successfully"})
     } catch (err) {
        console.log(err.message)
@@ -156,11 +160,12 @@ router.delete('/comment/delete/:postId/:commentId', auth, async (req, res) =>{
     const postId = req.params.postId;
     const commentId = req.params.commentId;
     try {
-        const post = await Post.findOne({id:postId})
+        const post = await Post.findById(postId)
         //find comment in the post
         const commentIndex = post.comments.map(item => item._id).indexOf(commentId)
         if(commentIndex == -1) return res.status(400).json({msg: "The associated post cannot be found"})
         post.comments.splice(commentIndex, 1);
+        await post.save()
         res.status(200).json({msg: "Comment deleted successfully"})
     } catch (err) {
        console.log(err.message)
@@ -170,6 +175,23 @@ router.delete('/comment/delete/:postId/:commentId', auth, async (req, res) =>{
     }
     
 
+ })
+
+ /**
+ * @route GET api/post/all/
+ * @description Fetch all posts based on date
+ * @returns array
+ * @access public
+ */
+
+ router.get('/all', auth, async (req, res) =>{
+     try {
+         const posts = await Post.find().sort({id: -1})
+         res.status(200).json(posts)
+     } catch (err) {
+        console.log(err.message)
+        return res.status(400).send("Server error")
+     }
  })
 
 module.exports = router;
